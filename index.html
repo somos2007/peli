@@ -1,0 +1,558 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseñas de Películas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2c2c2c;
+            color: white;
+            text-align: center;
+        }
+        .header {
+            background: linear-gradient(90deg, #ff5733, blue);
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            animation: fadeIn 1.5s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-icon {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .search-bar {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+        }
+        .category-menu {
+            display: none;
+            background-color: #333;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 20%;
+            text-align: left;
+            padding: 10px;
+        }
+        .category-menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 8px;
+            max-height: 40px; /* Limita la altura de cada enlace */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-radius: 15px; /* Bordes redondeados para los enlaces */
+            transition: background-color 0.3s; /* Transición suave para el hover */
+        }
+        .category-menu a:hover {
+            background-color: #444;
+        }
+
+        /* Contenedor de películas en un grid */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* Asegura que haya 5 columnas */
+            gap: 20px; /* Espacio entre los elementos */
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+
+
+        .movie {
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .movie img {
+            width: 100%; /* Imagen ocupa todo el ancho del cuadro */
+            border-radius: 5px;
+            max-height: 300px; /* Limitar la altura de la imagen */
+            object-fit: cover; /* Para que la imagen se recorte y no deforme */
+        }
+
+        .movie:hover {
+            transform: scale(1.05);
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+            width: 60%;
+            text-align: left;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .watch-button {
+            display: none;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #ff5733;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* Estilo del modal de términos y condiciones */
+        #terms-modal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+        }
+        #terms-modal .terms-content {
+            background: white;
+            color: black;
+            padding: 20px;
+            width: 20%;
+            border-radius: 10px;
+            text-align: center;
+        }
+        #terms-modal .terms-content button {
+            background-color: #ff5733;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #terms-modal .terms-content button:hover {
+            background-color: #e04e27;
+        }
+        .terms-checkbox {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .terms-checkbox input {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal de términos y condiciones -->
+    <div id="terms-modal">
+        <div class="terms-content">
+            <h2>Bienvenido</h2>
+            <p>Este sitio es solo con fines académicos. Por favor, acepta los términos y condiciones para continuar.</p>
+
+            <!-- Casilla de verificación -->
+            <div class="terms-checkbox">
+                <input type="checkbox" id="acceptCheckbox">
+                <label for="acceptCheckbox">Acepto los términos y condiciones</label>
+            </div>
+
+            <button onclick="acceptTerms()" id="acceptButton" disabled>Aceptar</button>
+
+        </div>
+    </div>
+
+    <div class="header">
+        <span class="menu-icon" onclick="toggleCategories()">☰</span>
+        Bienvenido a las Reseñas de Películas
+        <input type="text" class="search-bar" id="searchInput" onkeyup="searchMovie()" placeholder="Buscar película...">
+    </div>
+
+    <!-- Menú de categorías -->
+    <div id="category-menu" class="category-menu">
+        <a href="#" onclick="filterCategory('action')">Acción</a>
+        <a href="#" onclick="filterCategory('sci-fi')">Ciencia Ficción</a>
+        <a href="#" onclick="filterCategory('thriller')">Suspenso</a>
+        <a href="#" onclick="filterCategory('comedy')">Comedia</a>
+        <a href="#" onclick="filterCategory('animation')">Animación</a>
+        <a href="#" onclick="filterCategory('romance')">Romance</a>
+        <a href="#" onclick="filterCategory('all')">Todas</a>
+
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdmDKk26PMZbStKC71tqiSPUQ_2Ghz6j7CYB2B1bAUdHCYUVA/viewform?embedded=true" target="_blank">Calificar</a>
+        <a href="file:///F:/de%20redes/pagina%20web/segunda%20pagina/estrenos.html" target="_blank">Estreno</a>
+        <a href="file:///F:/de%20redes/pagina%20web/segunda%20pagina/contacto.html" target="_blank">Soporte</a>
+    </div>
+    
+    <div class="container" id="movie-list">
+        <!-- Película Inception -->
+        <div class="movie" onclick="openModal('inception')" data-category="sci-fi">
+            <h2>Inception</h2>
+            <img src="Inception" alt="Inception">
+            <p>Una película de Christopher Nolan que juega con los sueños y la realidad.</p>
+        </div>
+        
+        <!-- Película Interstellar -->
+        <div class="movie" onclick="openModal('interstellar')" data-category="sci-fi">
+            <h2>Interstellar</h2>
+            <img src="Interstellar" alt="Interstellar">
+            <p>Una épica película de ciencia ficción que explora el tiempo, el espacio y el amor.</p>
+        </div>
+
+        <!-- Película John Wick -->
+        <div class="movie" onclick="openModal('johnwick')" data-category="action">
+            <h2>John Wick</h2>
+            <img src="John Wick" alt="John Wick">
+            <p>Un exasesino a sueldo busca venganza tras el asesinato de su perro, un regalo de su difunta esposa.</p>
+        </div>
+
+        <!-- Película Matrix -->
+        <div class="movie" onclick="openModal('matrix')" data-category="sci-fi">
+            <h2>Matrix</h2>
+            <img src="Matrix" alt="Matrix">
+            <p>Neo descubre que la realidad no es lo que parece y se une a un grupo de rebeldes para luchar contra una inteligencia artificial que controla la humanidad.</p>
+        </div>
+
+        <!-- Película Chucky -->
+        <div class="movie" onclick="openModal('chucky')" data-category="thriller">
+            <h2>Chucky</h2>
+            <img src="chucky" alt="Chucky">
+            <p>Un muñeco poseído por un asesino psicópata aterroriza a una familia en esta película de suspenso y terror.</p>
+        </div>
+
+        <!-- Película Child's Play 2 (Chucky 2) -->
+        <div class="movie" onclick="openModal('chucky2')" data-category="thriller">
+            <h2>Child's Play 2</h2>
+            <img src="chucky2" alt="chucky2">
+            <p>El muñeco asesino regresa, ahora poseyendo nuevamente a Chucky y aterroriza a una nueva familia.</p>
+        </div>
+
+        <!-- Película Chucky 3 -->
+        <div class="movie" onclick="openModal('chucky-3')" data-category="terror">
+            <h2>Chucky 3</h2>
+            <img src="Chucky 3" alt="Chucky 3">
+            <p>En "Chucky 3", el muñeco diabólico regresa a la acción cuando Andy Barclay, ahora un adolescente, es enviado a una escuela militar. Chucky sigue buscando la manera de apoderarse del cuerpo de Andy.</p>
+        </div>
+
+        <!-- Película Chucky 4: La novia de Chucky -->
+        <div class="movie" onclick="openModal('chucky-4')" data-category="terror">
+            <h2>Chucky 4: La novia de Chucky</h2>
+            <img src="Chucky 4" alt="La novia de Chucky">
+            <p>En "La novia de Chucky", el muñeco diabólico regresa con una nueva compañera: Tiffany, quien también es un muñeco poseído. Juntos desatan el caos mientras buscan a un joven para transferir sus almas.</p>
+        </div>
+
+        <!-- Película Chucky 5: El hijo de Chucky -->
+        <div class="movie" onclick="openModal('chucky-5')" data-category="terror">
+            <h2>Chucky 5: El hijo de Chucky</h2>
+            <img src="Chucky 5" alt="El hijo de Chucky">
+            <p>En "El hijo de Chucky", el muñeco diabólico y su novia Tiffany descubren que tienen un hijo, quien se convierte en un ser torturado por su herencia y lucha con su identidad, mientras sus padres continúan con su reinado de terror.</p>
+        </div>
+
+        <!-- Película La Sustancia -->
+        <div class="movie" onclick="openModal('la-sustancia')" data-category="thriller">
+            <h2>La Sustancia</h2>
+            <img src="Sustancia" alt="Sustancia">
+            <p>Un thriller psicológico que sigue a un científico que, tras experimentar con una sustancia misteriosa, comienza a perder el control de su propia mente.</p>
+        </div>
+
+        <!-- Película Shrek 1 -->
+        <div class="movie" onclick="openModal('shrek1')" data-category="animation">
+            <h2>Shrek 1</h2>
+            <img src="Shrek1" alt="Shrek1">
+            <p>Un ogro llamado Shrek debe rescatar a una princesa en esta famosa película de animación llena de humor y aventura.</p>
+        </div>
+
+        <!-- Película Shrek 2 -->
+        <div class="movie" onclick="openModal('shrek2')" data-category="animation">
+            <h2>Shrek 2</h2>
+            <img src="Shrek2" alt="Shrek2">
+            <p>Shrek y Fiona se embarcan en una nueva aventura, enfrentándose a los padres de Fiona y descubriendo el verdadero amor y la aceptación.</p>
+        </div>
+
+        <!-- Película Shrek 3 -->
+        <div class="movie" onclick="openModal('shrek-3')" data-category="animacion">
+            <h2>Shrek 3</h2>
+            <img src="shrek 3" alt="Shrek 3">
+            <p>Shrek y Fiona deben hacerse cargo del reino de Muy Muy Lejano tras la desaparición del rey Harold. Mientras tanto, Shrek busca al heredero legítimo para el trono.</p>
+        </div>
+
+        <!-- Película Shrek 4 -->
+        <div class="movie" onclick="openModal('shrek-4')" data-category="animacion">
+            <h2>Shrek 4</h2>
+            <img src="Shrek 4" alt="Shrek 4">
+            <p>Shrek, cansado de su vida como padre de familia, firma un contrato con Rumpelstiltskin que lo lleva a una realidad alternativa donde nunca conoció a Fiona, y debe luchar para recuperar su vida.</p>
+        </div>
+
+        <!-- Película Norbit -->
+        <div class="movie" onclick="openModal('norbit')" data-category="comedy">
+            <h2>Norbit</h2>
+            <img src="Norbit" alt="Norbit">
+            <p>Una comedia protagonizada por Eddie Murphy, quien interpreta a Norbit, un hombre atrapado en un matrimonio desastroso y su lucha por encontrar el amor verdadero.</p>
+        </div>
+
+        <!-- Película Coco -->
+        <div class="movie" onclick="openModal('coco')" data-category="animation">
+            <h2>Coco</h2>
+            <img src="Coco" alt="Coco">
+            <p>Una emotiva película de animación que sigue a un niño llamado Miguel, quien viaja al mundo de los muertos para descubrir la historia de su familia.</p>
+        </div>
+
+        <!-- Película Rio -->
+        <div class="movie" onclick="openModal('rio')" data-category="animation">
+            <h2>Rio</h2>
+            <img src="Rio1" alt="Rio1">
+            <p>Un loro domesticado llamado Blu viaja a Río de Janeiro, donde conoce a una hembra llamada Jewel y vive una serie de aventuras.</p>
+        </div>
+
+        <!-- Película Rio 2 -->
+        <div class="movie" onclick="openModal('rio2')" data-category="animation">
+            <h2>Rio 2</h2>
+            <img src="Rio2" alt="Rio2">
+            <p>Blu y Jewel viajan a la jungla amazónica junto a sus hijos, donde enfrentan nuevas aventuras mientras descubren el mundo salvaje.</p>
+        </div>
+
+        <!-- Película Frozen -->
+        <div class="movie" onclick="openModal('frozen')" data-category="animation">
+            <h2>Frozen</h2>
+            <img src="Frozen" alt="Frozen">
+            <p>La historia de dos hermanas, Elsa y Anna, donde Elsa lucha por controlar sus poderes mágicos mientras su reino está sumido en el invierno eterno.</p>
+        </div>
+
+        <!-- Película Frozen 2 -->
+        <div class="movie" onclick="openModal('frozen2')" data-category="animation">
+            <h2>Frozen 2</h2>
+            <img src="Frozen2" alt="Frozen2">
+            <p>Elsa y Anna se embarcan en un viaje peligroso hacia el bosque encantado para descubrir el origen de los poderes de Elsa y salvar su reino.</p>
+        </div>
+
+        <!-- Película The Hangover (Comedia) -->
+        <div class="movie" onclick="openModal('hangover')" data-category="comedy">
+            <h2>The Hangover</h2>
+            <img src="Qué pasó ayer" alt="Qué pasó ayer">
+            <p>Una comedia que sigue a un grupo de amigos que intentan recordar los eventos de su noche de despedida de soltero en Las Vegas.</p>
+        </div>
+
+        <!-- Película Juego de gemelas -->
+        <div class="movie" onclick="openModal('twins')" data-category="comedy">
+            <h2>Juego de gemelas</h2>
+            <img src="Juego de Gemelas" alt="Juego de Gemelas">
+            <p>Dos gemelas separadas al nacer se encuentran en un campamento de verano y traman un plan para reunir a sus padres.</p>
+        </div>
+
+        <!-- Película La La Land -->
+        <div class="movie" onclick="openModal('lalaland')" data-category="romance">
+            <h2>La La Land</h2>
+            <img src="La La Land" alt="La La Land">
+            <p>Un musical romántico que cuenta la historia de un músico y una actriz que luchan por sus sueños mientras intentan mantener su relación.</p>
+        </div>
+
+        <!-- Película Diario de una pasión -->
+        <div class="movie" onclick="openModal('diario-de-una-pasion')" data-category="romance">
+            <h2>Diario de una pasión</h2>
+            <img src="Diario de una pasión" alt="Diario de una pasión">
+            <p>Un amor eterno y conmovedor entre Noah y Allie, dos jóvenes que se enamoran en el verano de 1940, pero las circunstancias los separan durante años.</p>
+        </div>
+
+        <!-- Película Como si fuera la primera vez -->
+        <div class="movie" onclick="openModal('como-si-fuera-la-primera-vez')" data-category="romance">
+            <h2>Como si fuera la primera vez</h2>
+            <img src="Como si fuera la primera vez" alt="Como si fuera la primera vez">
+            <p>Henry, un biólogo marino, se enamora de Lucy, una mujer con amnesia que pierde la memoria cada día. Cada día es una nueva oportunidad para volver a conquistarla.</p>
+        </div>
+
+    </div>
+    
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title"></h2>
+            <p id="modal-text"></p>
+            <a id="watch-link" class="watch-button" target="_blank">Ver película</a>
+        </div>
+    </div>
+
+    <script>
+        // Función para habilitar el botón "Aceptar" cuando el checkbox está marcado
+        document.getElementById("acceptCheckbox").addEventListener("change", function() {
+            const acceptButton = document.getElementById("acceptButton");
+            acceptButton.disabled = !this.checked;
+        });
+
+        // Función para cerrar el modal de términos
+        function acceptTerms() {
+            document.getElementById("terms-modal").style.display = "none";
+        }
+
+        // Mostrar el modal de aceptación de términos al cargar la página
+        window.onload = function() {
+            document.getElementById("terms-modal").style.display = "flex";
+        };
+
+        function toggleCategories() {
+            const menu = document.getElementById('category-menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function openModal(movie) {
+            const title = {
+                'inception': 'Inception',
+                'interstellar': 'Interstellar',
+                'johnwick': 'John Wick',
+                'chucky': 'Chucky',
+                'chucky2': 'Child\'s Play 2',
+                'chucky-3': 'Chucky 3',
+                'chucky-4': 'Chucky 4: La novia de Chucky',
+                'chucky-5': 'Chucky 5: El hijo de Chucky',
+                'la-sustancia': 'La Sustancia',
+                'shrek1': 'Shrek 1',
+                'shrek2': 'Shrek 2', // Nueva película
+                'shrek-3': 'Shrek 3',
+                'shrek-4': 'Shrek 4',
+                'norbit': 'Norbit', // Nueva película
+                'coco': 'Coco', // Nueva película
+                'rio1': 'Rio 1',
+                'rio2': 'Rio 2',
+                'frozen': 'Frozen',
+                'frozen2': 'Frozen 2',
+                'hangover': 'The Hangover',
+                'twins': 'Juego de gemelas',
+                'lalaland': 'La La Land',
+                'diario-de-una-pasion': 'Diario de una pasión',
+                'como-si-fuera-la-primera-vez': 'Como si fuera la primera vez',
+            };
+            const reviews = {
+                'inception': "Inception es una obra maestra de Christopher Nolan que explora la mente humana a través de los sueños y la percepción de la realidad.",
+                'interstellar': "Interstellar es una película de ciencia ficción que trasciende los límites del tiempo y el espacio.",
+                'johnwick': "John Wick es una intensa película de acción que sigue a un hombre que busca venganza tras la muerte de su perro, un último regalo de su esposa.",
+                'matrix': "Matrix es una película de ciencia ficción donde un hombre descubre que la realidad no es lo que parece, y lucha contra una inteligencia artificial que controla la humanidad.",
+                'chucky': "Chucky es una película de terror y suspenso sobre un muñeco poseído que aterroriza a una familia.",
+                'chucky2': "Child's Play 2 sigue la historia del muñeco asesino que regresa para aterrorizar a una nueva víctima después de haber sido reactivado.",
+                'chucky-3': "Chucky 3 lleva al muñeco asesino a un nuevo escenario, una escuela militar, donde vuelve a buscar a Andy, mientras desata una serie de asesinatos. Esta película mezcla el terror con algo de sátira sobre la vida militar.",
+                'chucky-4': "La novia de Chucky introduce a Tiffany, quien se convierte en la compañera letal de Chucky, añadiendo una nueva dimensión a la saga. Con más humor negro y sangre, esta película es un giro interesante en la franquicia de Chucky.",
+                'chucky-5': "El hijo de Chucky es una mezcla de horror y comedia, donde la franquicia da un giro aún más macabro. El hijo de Chucky se convierte en el centro de una historia que aborda la identidad y la familia, mientras Chucky y Tiffany siguen sembrando caos.",
+                'la-sustancia': "La Sustancia es un thriller psicológico que sigue a un científico que, tras experimentar con una sustancia misteriosa, comienza a perder el control de su propia mente.",
+                'shrek1': "Shrek 1 es una película animada que sigue las aventuras de un ogro llamado Shrek mientras lucha por rescatar a una princesa y descubre la importancia de la amistad y el amor.",
+                'shrek2': "Shrek 2 continúa la historia de Shrek y Fiona en una nueva aventura, enfrentándose a los padres de Fiona y descubriendo más sobre su propio amor.",
+                'shrek-3': "Shrek 3 es la tercera entrega de la saga animada en la que Shrek y Fiona enfrentan la responsabilidad de ser los nuevos reyes, mientras buscan al legítimo heredero del trono, enfrentándose a situaciones cómicas y personajes peculiares.",
+                'shrek-4': "Shrek 4, también conocida como 'Shrek Forever After', es una historia donde Shrek vive una aventura inesperada en una realidad alternativa. Se enfrenta a las consecuencias de sus deseos y lucha por recuperar lo que más le importa.",
+                'norbit': "Norbit es una comedia que sigue a un hombre atrapado en un matrimonio complicado, protagonizada por Eddie Murphy.",
+                'coco': "Coco es una emotiva película sobre la familia, el Día de los Muertos y el viaje de un niño al mundo de los muertos para conocer la historia de su familia.",
+                'rio': "Un loro domesticado llamado Blu viaja a Río de Janeiro, donde conoce a una hembra llamada Jewel y vive una serie de aventuras mientras trata de adaptarse a su nuevo entorno.",
+                'rio2': "Blu y Jewel viajan a la jungla amazónica junto a sus hijos, donde enfrentan nuevas aventuras mientras descubren el mundo salvaje.",
+                'frozen': "Frozen cuenta la historia de dos hermanas, Elsa y Anna, donde Elsa lucha por controlar sus poderes mágicos mientras su reino está sumido en el invierno eterno.",
+                'frozen2': "Frozen 2 sigue a Elsa y Anna en un viaje hacia el bosque encantado para descubrir el origen de los poderes de Elsa.",
+                'hangover': "The Hangover es una comedia que narra las desventuras de un grupo de amigos que intentan recordar lo que ocurrió durante una alocada noche en Las Vegas.",
+                'twins': "Juego de gemelas es una comedia que sigue a dos gemelas separadas al nacer que traman un plan para reunir a sus padres.",
+                'lalaland': "La La Land es un musical romántico que narra la historia de un músico y una actriz que luchan por sus sueños mientras intentan mantener su relación.",
+                'diario-de-una-pasion': "Diario de una pasión es una historia romántica que explora el poder del amor, la memoria y el destino. Noah y Allie, a pesar de las adversidades, mantienen una conexión profunda que trasciende el tiempo.",
+                'como-si-fuera-la-primera-vez': "Como si fuera la primera vez es una comedia romántica que narra la historia de Henry, un hombre que se enamora de Lucy, quien sufre de amnesia a corto plazo. Cada día es una nueva oportunidad para él de volver a enamorarla.",
+        };
+            const links = {
+                'inception': "https://www.pelis182.com/el-origen/",
+                'interstellar': "https://www.pelis182.com/interestelar/",
+                'johnwick': "https://www.pelis182.com/john-wick/",
+                'matrix': "https://www.pelis182.com/matrix/",
+                'chucky': "https://www.pelis182.com/chucky/",
+                'chucky2': "https://www.pelis182.com/chucky-el-muneco-diabolico-2/",
+                'chucky-3': "https://www.pelis182.com/chucky-el-muneco-diabolico-3/",
+                'chucky-4': "https://www.pelis182.com/la-novia-de-chucky/",
+                'chucky-5': "https://www.pelis182.com/el-hijo-de-chucky/",
+                'la-sustancia': "https://www.pelis182.com/la-sustancia/",
+                'shrek1': "https://www.pelis182.com/shrek-html/",
+                'shrek2': "https://www.pelis182.com/shrek-2/",
+                'shrek-3': "https://www.pelis182.com/shrek-tercero-html/",
+                'shrek-4': "https://www.pelis182.com/shrek-para-siempre-html/",
+                'norbit': "https://www.pelis182.com/norbit/",
+                'coco': "https://www.pelis182.com/coco-html/",
+                'rio1': "https://www.pelis182.com/rio-html/",
+                'rio2': "https://www.pelis182.com/rio2/",
+                'frozen': "https://www.pelis182.com/frozen-aventura-congelada-pelicula-html/",
+                'frozen2': "https://www.pelis182.com/frozen-2/",
+                'hangover': "https://www.pelis182.com/que-paso-ayer/",
+                'twins': "https://www.pelis182.com/juego-de-gemelas/",
+                'lalaland': "https://www.pelis182.com/la-la-land/",
+                'diario-de-una-pasion': "https://www.pelis182.com/diario-de-una-pasion/",
+                'como-si-fuera-la-primera-vez': "https://www.pelis182.com/como-si-fuera-la-primera-vez/",
+            };
+
+            document.getElementById("modal-title").innerText = title[movie];
+            document.getElementById("modal-text").innerText = reviews[movie];
+
+            const watchLink = document.getElementById("watch-link");
+            watchLink.href = links[movie];
+            watchLink.style.display = 'inline-block';
+
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        function searchMovie() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let movies = document.querySelectorAll(".movie");
+
+            movies.forEach(movie => {
+                let title = movie.getElementsByTagName("h2")[0].innerText.toLowerCase();
+                movie.style.display = title.includes(input) ? "block" : "none";
+            });
+        }
+
+        function filterCategory(category) {
+            let movies = document.querySelectorAll(".movie");
+            movies.forEach(movie => {
+                let movieCategory = movie.getAttribute("data-category");
+                if (category === 'all' || movieCategory.includes(category)) {
+                    movie.style.display = "block";
+                } else {
+                    movie.style.display = "none";
+                }
+            });
+            document.getElementById('category-menu').style.display = 'none'; // Ocultar el menú después de aplicar el filtro
+        }
+    </script>
+</body>
+</html>
